@@ -3,6 +3,7 @@ import BaseAuthenticator from 'ember-simple-auth/authenticators/base';
 export default BaseAuthenticator.extend({
   config: Ember.inject.service(),
   database: Ember.inject.service(),
+  pouchdbSync: Ember.inject.service(),
   serverEndpoint: '/db/_session',
   useGoogleAuth: false,
 
@@ -103,6 +104,9 @@ export default BaseAuthenticator.extend({
       }, function(xhr) {
         reject(xhr.responseJSON || xhr.responseText);
       });
+    }).then((user) => {
+      this.get('pouchdbSync').setup();
+      return user;
     });
   },
 

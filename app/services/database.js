@@ -8,6 +8,8 @@ export default Ember.Service.extend(PouchAdapterUtils, {
   mainDB: null, // Server DB
   oauthHeaders: null,
   setMainDB: false,
+  localMainDB: null,
+  remoteDB: null,
 
   setup(configs) {
     PouchDB.plugin(List);
@@ -44,8 +46,14 @@ export default Ember.Service.extend(PouchAdapterUtils, {
       }
       let url = `${document.location.protocol}//${document.location.host}/db/main`;
 
-      let localMainDB = this._createLocalDB('localMainDB', pouchOptions);
-      let remoteDB = this._createRemoteDB(url, pouchOptions);
+      let localMainDB = this._createLocalDB('localMainDB', pouchOptions).then((db) => {
+        this.set('localMainDB', db);
+        return db;
+      });
+      let remoteDB = this._createRemoteDB(url, pouchOptions).then((db) => {
+        this.set('remoteDB', db);
+        return db;
+      });
 
       remoteDB
       .catch((err) => {
@@ -165,7 +173,6 @@ export default Ember.Service.extend(PouchAdapterUtils, {
   _createRemoteDB(remoteUrl, pouchOptions) {
     return new Ember.RSVP.Promise(function(resolve, reject) {
       let remoteDB = new PouchDB(remoteUrl, pouchOptions);
-      window.remoteDB = remoteDB;
       // remote db lazy created, check if db created correctly
       remoteDB.info().then(()=> {
         createPouchViews(remoteDB);
@@ -180,7 +187,6 @@ export default Ember.Service.extend(PouchAdapterUtils, {
   _createLocalDB(localDBName, pouchOptions) {
     return new Ember.RSVP.Promise(function(resolve, reject) {
       let localDB = new PouchDB(localDBName, pouchOptions);
-      window.localMainDB = localDB;
       localDB.info().then(() => {
         createPouchViews(localDB);
         resolve(localDB);
